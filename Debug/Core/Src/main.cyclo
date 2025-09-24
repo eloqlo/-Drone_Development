@@ -1,3 +1,4 @@
-../Core/Src/main.c:67:5:main	1
-../Core/Src/main.c:123:6:SystemClock_Config	3
-../Core/Src/main.c:172:6:Error_Handler	1
+../Core/Src/main.c:71:5:main	1
+../Core/Src/main.c:131:6:SystemClock_Config	3
+../Core/Src/main.c:173:6:HAL_UART_RxCpltCallback	2
+../Core/Src/main.c:185:6:Error_Handler	1

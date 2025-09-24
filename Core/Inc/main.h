@@ -57,6 +57,14 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define SPI2_CS_Pin GPIO_PIN_12
+#define SPI2_CS_GPIO_Port GPIOB
+#define BNO_INT_Pin GPIO_PIN_8
+#define BNO_INT_GPIO_Port GPIOC
+#define BNO_RST_Pin GPIO_PIN_9
+#define BNO_RST_GPIO_Port GPIOC
+#define BNO_PS0_WAKE_Pin GPIO_PIN_8
+#define BNO_PS0_WAKE_GPIO_Port GPIOA
 
 /* USER CODE BEGIN Private defines */
 

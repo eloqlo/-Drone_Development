@@ -18,6 +18,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "spi.h"
 #include "tim.h"
 #include "usart.h"
 #include "gpio.h"
@@ -58,6 +59,10 @@ void SystemClock_Config(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 extern TIM_HandleTypeDef htim3;
+
+#define RxBufferSize 	20
+unsigned char TxBuffer[] = "UART Example Test !\n";
+unsigned char RxBuffer[];
 /* USER CODE END 0 */
 
 /**
@@ -91,7 +96,10 @@ int main(void)
   MX_GPIO_Init();
   MX_TIM3_Init();
   MX_USART6_UART_Init();
+  MX_SPI2_Init();
   /* USER CODE BEGIN 2 */
+
+  /* Buzzer */
   HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_4);
   htim3.Instance->ARR = 2000;
   HAL_Delay(100);
@@ -101,8 +109,19 @@ int main(void)
   HAL_Delay(100);
   HAL_TIM_PWM_Stop(&htim3, TIM_CHANNEL_4);
 
-  unsigned char TxBuffer[] = "UART Example Test !\n";
-  HAL_UART_Transmit(&huart6, TxBuffer, strlen((char *)TxBuffer), 0xffff);
+  /* Debug UART Test*/
+//  HAL_UART_Transmit(&huart6, TxBuffer, strlen((char *)TxBuffer), HAL_MAX_DELAY);
+//  HAL_UART_Receive_IT(&huart6, RxBuffer, 1);
+
+  /* BNO080 Test
+   * 목표: Datasheet만 보고 코드 참조해서 HAL로 BNO080에서 Quaternion 값 읽어오기
+   * */
+
+
+
+
+
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -162,7 +181,12 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
-
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef* huart){
+	if (huart->Instance == USART6){
+		HAL_UART_Receive_IT(&huart6, RxBuffer, 1);
+		HAL_UART_Transmit_IT(&huart6, RxBuffer, 1);
+	}
+}
 /* USER CODE END 4 */
 
 /**
