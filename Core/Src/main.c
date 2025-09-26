@@ -99,6 +99,8 @@ int main(void)
   MX_SPI2_Init();
   /* USER CODE BEGIN 2 */
 
+
+
   /* Buzzer */
   HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_4);
   htim3.Instance->ARR = 2000;

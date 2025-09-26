@@ -18,47 +18,6 @@ extern SPI_HandleTypeDef hspi2;
  */
 #define BNO080_SPI_CHANNEL		SPI2
 
-#define BNO080_SPI_SCLK_PIN		LL_GPIO_PIN_13
-#define BNO080_SPI_SCLK_PORT	GPIOB
-#define BNO080_SPI_SCLK_CLK		LL_AHB1_GRP1_PERIPH_GPIOB
-
-#define BNO080_SPI_MISO_PIN		LL_GPIO_PIN_14
-#define BNO080_SPI_MISO_PORT	GPIOB
-#define BNO080_SPI_MISO_CLK		LL_AHB1_GRP1_PERIPH_GPIOB
-
-#define BNO080_SPI_MOSI_PIN		LL_GPIO_PIN_15
-#define BNO080_SPI_MOSI_PORT	GPIOB
-#define BNO080_SPI_MOSI_CLK		LL_AHB1_GRP1_PERIPH_GPIOB
-
-#define BNO080_SPI_CS_PIN		LL_GPIO_PIN_12
-#define BNO080_SPI_CS_PORT		GPIOB
-#define BNO080_SPI_CS_CLK		LL_AHB1_GRP1_PERIPH_GPIOB
-
-#define BNO080_PS0_WAKE_PIN		LL_GPIO_PIN_8
-#define BNO080_PS0_WAKE_PORT	GPIOA
-#define BNO080_PS0_WAKE_CLK		LL_AHB1_GRP1_PERIPH_GPIOA
-
-#define BNO080_RST_PIN			LL_GPIO_PIN_9
-#define BNO080_RST_PORT			GPIOC
-#define BNO080_RST_CLK			LL_AHB1_GRP1_PERIPH_GPIOC
-
-#define BNO080_INT_PIN			LL_GPIO_PIN_8
-#define BNO080_INT_PORT			GPIOC
-#define BNO080_INT_CLK			LL_AHB1_GRP1_PERIPH_GPIOC
-
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-#define CHIP_SELECT(BNO080)		LL_GPIO_ResetOutputPin(BNO080_SPI_CS_PORT, BNO080_SPI_CS_PIN)
-#define CHIP_DESELECT(BNO080)	LL_GPIO_SetOutputPin(BNO080_SPI_CS_PORT, BNO080_SPI_CS_PIN)
-
-#define WAKE_HIGH()				LL_GPIO_SetOutputPin(BNO080_PS0_WAKE_PORT, BNO080_PS0_WAKE_PIN)
-#define WAKE_LOW()				LL_GPIO_ResetOutputPin(BNO080_PS0_WAKE_PORT, BNO080_PS0_WAKE_PIN)
-
-#define RESET_HIGH()			LL_GPIO_SetOutputPin(BNO080_RST_PORT, BNO080_RST_PIN)
-#define RESET_LOW()				LL_GPIO_ResetOutputPin(BNO080_RST_PORT, BNO080_RST_PIN)
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-
 //Registers
 enum Registers
 {
@@ -125,7 +84,6 @@ enum Registers
 #define MAX_PACKET_SIZE 128 //Packets can be up to 32k but we don't have that much RAM.
 #define MAX_METADATA_SIZE 9 //This is in words. There can be many but we mostly only care about the first 9 (Qs, range, etc)
 
-void BNO080_GPIO_SPI_Initialization(void);
 int BNO080_Initialization(void);
 unsigned char SPI2_SendByte(unsigned char data);
 
