@@ -89,19 +89,22 @@ int BNO080_Initialization(void)
 	return (1); //Something went wrong
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 unsigned char SPI2_SendByte(unsigned char data)
 {
-//	while(LL_SPI_IsActiveFlag_TXE(BNO080_SPI_CHANNEL)==RESET);
-//	LL_SPI_TransmitData8(BNO080_SPI_CHANNEL, data);
+//	while(LL_SPI_IsActiveFlag_TXE(BNO080_SPI_CHANNEL)==RESET);		// Tx Buffer에서 shift register로 데이터 로드되면 탈출(이전 데이터 있으면 그거 다 로드될 때 까지 대기)
+//	LL_SPI_TransmitData8(BNO080_SPI_CHANNEL, data);					// data를 TxBuffer에 씀. -> 첫번째 클럭 나오면 Shift Register로 병렬로드 -> MOSI 핀으로 1bit 씩 전송
 //
-//	while(LL_SPI_IsActiveFlag_RXNE(BNO080_SPI_CHANNEL)==RESET);
-//	return LL_SPI_ReceiveData8(BNO080_SPI_CHANNEL);
+//	while(LL_SPI_IsActiveFlag_RXNE(BNO080_SPI_CHANNEL)==RESET);		// RxBuffer에 새 데이터 들어오면 Set으로 탈출 (Receive data Not Empty)
+//	return LL_SPI_ReceiveData8(BNO080_SPI_CHANNEL);					// 데이터 수신 받아서 return
+	uint8_t rx = 0;
+	if (HAL_SPI_TransmitReceive(&hspi2, &data, &rx, 1, 100)){
+		return 0;
+	}
+	return rx;
 }
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
-//////////////////////////////////////////////////////////////////////////
-//init
-//////////////////////////////////////////////////////////////////////////
 
 //Updates the latest variables if possible
 //Returns false if new readings are not available

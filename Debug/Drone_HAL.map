@@ -242,7 +242,7 @@ Discarded input sections
  .text.BNO080_Initialization
                 0x00000000      0x110 ./Core/Src/BNO080.o
  .text.SPI2_SendByte
-                0x00000000       0x18 ./Core/Src/BNO080.o
+                0x00000000       0x38 ./Core/Src/BNO080.o
  .text.BNO080_dataAvailable
                 0x00000000       0x5c ./Core/Src/BNO080.o
  .text.BNO080_parseCommandReport
@@ -369,8 +369,8 @@ Discarded input sections
                 0x00000000       0xe8 ./Core/Src/BNO080.o
  .text.BNO080_sendPacket
                 0x00000000       0xa4 ./Core/Src/BNO080.o
- .debug_info    0x00000000      0xf32 ./Core/Src/BNO080.o
- .debug_abbrev  0x00000000      0x308 ./Core/Src/BNO080.o
+ .debug_info    0x00000000     0x147a ./Core/Src/BNO080.o
+ .debug_abbrev  0x00000000      0x387 ./Core/Src/BNO080.o
  .debug_aranges
                 0x00000000      0x220 ./Core/Src/BNO080.o
  .debug_rnglists
@@ -432,10 +432,10 @@ Discarded input sections
  .debug_macro   0x00000000       0x1c ./Core/Src/BNO080.o
  .debug_macro   0x00000000      0x185 ./Core/Src/BNO080.o
  .debug_macro   0x00000000      0x19b ./Core/Src/BNO080.o
- .debug_line    0x00000000     0x1316 ./Core/Src/BNO080.o
- .debug_str     0x00000000    0xbefae ./Core/Src/BNO080.o
+ .debug_line    0x00000000     0x132b ./Core/Src/BNO080.o
+ .debug_str     0x00000000    0xbf42c ./Core/Src/BNO080.o
  .comment       0x00000000       0x44 ./Core/Src/BNO080.o
- .debug_frame   0x00000000      0x858 ./Core/Src/BNO080.o
+ .debug_frame   0x00000000      0x854 ./Core/Src/BNO080.o
  .ARM.attributes
                 0x00000000       0x34 ./Core/Src/BNO080.o
  .group         0x00000000        0xc ./Core/Src/Quaternion.o
