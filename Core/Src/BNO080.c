@@ -44,7 +44,7 @@ int BNO080_Initialization(void)
 	HAL_GPIO_WritePin(SPI2_CS_GPIO_Port, SPI2_CS_Pin, GPIO_PIN_SET);			// CHIP_DESELECT(BNO080)
 	HAL_GPIO_WritePin(BNO_PS0_WAKE_GPIO_Port, BNO_PS0_WAKE_Pin, GPIO_PIN_SET);	// WAKE_HIGH()
 	HAL_GPIO_WritePin(BNO_RST_GPIO_Port, BNO_RST_Pin, GPIO_PIN_SET);			// RESET_HIGH()
-	printf("Reset BNO080 ...");
+	printf("Configure BNO080 ...");
 	HAL_GPIO_WritePin(SPI2_CS_GPIO_Port, SPI2_CS_Pin, GPIO_PIN_SET);			// CHIP_DESELECT(BNO080)
 
 	//Configure the BNO080 for SPI communication
@@ -110,7 +110,7 @@ int BNO080_dataAvailable(void)
 	//If we have an interrupt pin connection available, check if data is available.
 	//If int pin is NULL, then we'll rely on BNO080_receivePacket() to timeout
 	//See issue 13: https://github.com/sparkfun/SparkFun_BNO080_Arduino_Library/issues/13
-	if (LL_GPIO_IsInputPinSet(BNO080_INT_PORT, BNO080_INT_PIN) == 1)
+	if (HAL_GPIO_ReadPin(BNO_INT_GPIO_Port, BNO_INT_Pin) == 1)
 		return (0);
 
 	if (BNO080_receivePacket() == 1)
@@ -876,7 +876,7 @@ int BNO080_waitForSPI(void)
 {
 	for (uint32_t counter = 0; counter < 0xffffffff; counter++) //Don't got more than 255
 	{
-		if (LL_GPIO_IsInputPinSet(BNO080_INT_PORT, BNO080_INT_PIN) == 0)
+		if (HAL_GPIO_ReadPin(BNO_INT_GPIO_Port, BNO_INT_Pin) == 0)
 		{
 			//printf("\nData available\n");
 			return (1);
@@ -894,14 +894,14 @@ int BNO080_receivePacket(void)
 {
 	uint8_t incoming;
 
-	if (LL_GPIO_IsInputPinSet(BNO080_INT_PORT, BNO080_INT_PIN) == 1)
+	if (HAL_GPIO_ReadPin(BNO_INT_GPIO_Port, BNO_INT_Pin) == 1)
 		return (0); //Data is not available
 
 	//Old way: if (BNO080_waitForSPI() == 0) return (0); //Something went wrong
 
 	//Get first four bytes to find out how much data we need to read
 
-	CHIP_SELECT(BNO080);
+	HAL_GPIO_WritePin(SPI2_CS_GPIO_Port, SPI2_CS_Pin, GPIO_PIN_RESET);	// CHIP_SELECT(BNO080)
 
 	//Get the first four bytes, aka the packet header
 	uint8_t packetLSB = SPI2_SendByte(0);
@@ -957,7 +957,7 @@ int BNO080_sendPacket(uint8_t channelNumber, uint8_t dataLength)
 
 	//BNO080 has max CLK of 3MHz, MSB first,
 	//The BNO080 uses CPOL = 1 and CPHA = 1. This is mode3
-	CHIP_SELECT(BNO080);
+	HAL_GPIO_WritePin(SPI2_CS_GPIO_Port, SPI2_CS_Pin, GPIO_PIN_RESET);	// CHIP_SELECT(BNO080)
 
 	//Send the 4 byte packet header
 	SPI2_SendByte(packetLength & 0xFF);			//Packet length LSB
