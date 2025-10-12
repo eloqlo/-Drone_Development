@@ -28,6 +28,18 @@ extern "C" {
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f4xx_hal.h"
+#include "stm32f4xx_ll_spi.h"
+#include "stm32f4xx_ll_tim.h"
+#include "stm32f4xx_ll_usart.h"
+#include "stm32f4xx_ll_rcc.h"
+#include "stm32f4xx_ll_system.h"
+#include "stm32f4xx_ll_gpio.h"
+#include "stm32f4xx_ll_exti.h"
+#include "stm32f4xx_ll_bus.h"
+#include "stm32f4xx_ll_cortex.h"
+#include "stm32f4xx_ll_utils.h"
+#include "stm32f4xx_ll_pwr.h"
+#include "stm32f4xx_ll_dma.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -57,14 +69,10 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define SPI2_CS_Pin GPIO_PIN_12
-#define SPI2_CS_GPIO_Port GPIOB
-#define BNO_INT_Pin GPIO_PIN_8
-#define BNO_INT_GPIO_Port GPIOC
-#define BNO_RST_Pin GPIO_PIN_9
-#define BNO_RST_GPIO_Port GPIOC
-#define BNO_PS0_WAKE_Pin GPIO_PIN_8
-#define BNO_PS0_WAKE_GPIO_Port GPIOA
+#define M8N_TX4_Pin LL_GPIO_PIN_10
+#define M8N_TX4_GPIO_Port GPIOC
+#define M8N_RX4_Pin LL_GPIO_PIN_11
+#define M8N_RX4_GPIO_Port GPIOC
 
 /* USER CODE BEGIN Private defines */
 

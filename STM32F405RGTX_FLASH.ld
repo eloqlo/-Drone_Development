@@ -53,7 +53,6 @@ MEMORY
 /* Sections */
 SECTIONS
 {
-
   /* The startup code into "FLASH" Rom type memory */
   .isr_vector :
   {

@@ -1,22 +1,99 @@
 /*
- * BNO080.h
+  This is a library written for the BNO080
+  SparkFun sells these at its website: www.sparkfun.com
+  Do you like this library? Help support SparkFun. Buy a board!
+  https://www.sparkfun.com/products/14686
+
+  Written by Nathan Seidle @ SparkFun Electronics, December 28th, 2017
+
+  The BNO080 IMU is a powerful triple axis gyro/accel/magnetometer coupled with an ARM processor
+  to maintain and complete all the complex calculations for various VR, inertial, step counting,
+  and movement operations.
+
+  This library handles the initialization of the BNO080 and is able to query the sensor
+  for different readings.
+
+  https://github.com/sparkfun/SparkFun_BNO080_Arduino_Library
+
+  Development environment specifics:
+  Arduino IDE 1.8.5
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+/*
+ * This library source code has been modified for STM32F4. Only supports SPI.
  *
- *  Created on: Sep 21, 2025
- *      Author: jh
+ * Development environment specifics:
+ * STM32CubeIDE 1.0.0
+ * STM32CubeF4 FW V1.24.1
+ * STM32F4 LL Driver(SPI) and HAL Driver(RCC for HAL_Delay() function)
+ *
+ * Modified by ChrisP(Wonyeob Park) @ M-HIVE Embedded Academy, June, 2019
+ * Rev. 1.0
+ *
+ * https://github.com/ChrisWonyeobPark/BNO080-STM32F4-SPI-LL-Driver
+ * https://www.udemy.com/course/stm32-drone-programming/?referralCode=E24CB7B1CD9993855D45
+ * https://www.inflearn.com/course/stm32cubelde-stm32f4%EB%93%9C%EB%A1%A0-%EA%B0%9C%EB%B0%9C
  */
 
-#ifndef INC_BNO080_H_
-#define INC_BNO080_H_
+#ifndef	_BNO080_H
+#define	_BNO080_H
 
 #include "main.h"
-
-extern SPI_HandleTypeDef hspi2;
-
+//////////////////////////////////////////////////////////////////////////
 
 /**
  * @brief Definition for connected to SPI2 (APB1 PCLK = 42MHz)
  */
 #define BNO080_SPI_CHANNEL		SPI2
+
+#define BNO080_SPI_SCLK_PIN		LL_GPIO_PIN_13
+#define BNO080_SPI_SCLK_PORT	GPIOB
+#define BNO080_SPI_SCLK_CLK		LL_AHB1_GRP1_PERIPH_GPIOB
+
+#define BNO080_SPI_MISO_PIN		LL_GPIO_PIN_14
+#define BNO080_SPI_MISO_PORT	GPIOB
+#define BNO080_SPI_MISO_CLK		LL_AHB1_GRP1_PERIPH_GPIOB
+
+#define BNO080_SPI_MOSI_PIN		LL_GPIO_PIN_15
+#define BNO080_SPI_MOSI_PORT	GPIOB
+#define BNO080_SPI_MOSI_CLK		LL_AHB1_GRP1_PERIPH_GPIOB
+
+#define BNO080_SPI_CS_PIN		LL_GPIO_PIN_12
+#define BNO080_SPI_CS_PORT		GPIOB
+#define BNO080_SPI_CS_CLK		LL_AHB1_GRP1_PERIPH_GPIOB
+
+#define BNO080_PS0_WAKE_PIN		LL_GPIO_PIN_8
+#define BNO080_PS0_WAKE_PORT	GPIOA
+#define BNO080_PS0_WAKE_CLK		LL_AHB1_GRP1_PERIPH_GPIOA
+
+#define BNO080_RST_PIN			LL_GPIO_PIN_9
+#define BNO080_RST_PORT			GPIOC
+#define BNO080_RST_CLK			LL_AHB1_GRP1_PERIPH_GPIOC
+
+#define BNO080_INT_PIN			LL_GPIO_PIN_8
+#define BNO080_INT_PORT			GPIOC
+#define BNO080_INT_CLK			LL_AHB1_GRP1_PERIPH_GPIOC
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+#define CHIP_SELECT(BNO080)		LL_GPIO_ResetOutputPin(BNO080_SPI_CS_PORT, BNO080_SPI_CS_PIN)
+#define CHIP_DESELECT(BNO080)	LL_GPIO_SetOutputPin(BNO080_SPI_CS_PORT, BNO080_SPI_CS_PIN)
+
+#define WAKE_HIGH()				LL_GPIO_SetOutputPin(BNO080_PS0_WAKE_PORT, BNO080_PS0_WAKE_PIN)
+#define WAKE_LOW()				LL_GPIO_ResetOutputPin(BNO080_PS0_WAKE_PORT, BNO080_PS0_WAKE_PIN)
+
+#define RESET_HIGH()			LL_GPIO_SetOutputPin(BNO080_RST_PORT, BNO080_RST_PIN)
+#define RESET_LOW()				LL_GPIO_ResetOutputPin(BNO080_RST_PORT, BNO080_RST_PIN)
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
 
 //Registers
 enum Registers
@@ -84,6 +161,7 @@ enum Registers
 #define MAX_PACKET_SIZE 128 //Packets can be up to 32k but we don't have that much RAM.
 #define MAX_METADATA_SIZE 9 //This is in words. There can be many but we mostly only care about the first 9 (Qs, range, etc)
 
+void BNO080_GPIO_SPI_Initialization(void);
 int BNO080_Initialization(void);
 unsigned char SPI2_SendByte(unsigned char data);
 
@@ -158,5 +236,4 @@ int BNO080_waitForSPI(void);
 int BNO080_receivePacket(void);
 int BNO080_sendPacket(uint8_t channelNumber, uint8_t dataLength);
 
-
-#endif /* INC_BNO080_H_ */
+#endif

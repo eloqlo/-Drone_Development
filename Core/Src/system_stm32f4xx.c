@@ -204,7 +204,7 @@ void SystemInit(void)
   *         
   *         (*) HSI_VALUE is a constant defined in stm32f4xx_hal_conf.h file (default value
   *             16 MHz) but the real value may vary depending on the variations
-  *             in voltage and temperature.   
+  *             in voltage and temp0erature.
   *    
   *         (**) HSE_VALUE is a constant defined in stm32f4xx_hal_conf.h file (its value
   *              depends on the application requirements), user has to ensure that HSE_VALUE

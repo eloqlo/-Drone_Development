@@ -41,7 +41,29 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN PV */
+uint8_t uart6_rx_flag = 0;
+uint8_t uart6_rx_data = 0;
 
+uint8_t uart5_rx_flag = 0;
+uint8_t uart5_rx_data = 0;
+
+uint8_t uart4_rx_flag = 0;
+uint8_t uart4_rx_data = 0;
+
+// GPS
+uint8_t m8n_rx_buf[36];		// message frame 크기와 같은 36byte
+uint8_t m8n_rx_cplt_flag = 0;
+
+// Controller
+uint8_t ibus_rx_buf[36];		// message frame 크기와 같은 36byte
+uint8_t ibus_rx_cplt_flag = 0;	// 메시지 수신 완료된거 플래그로 나타낼 함수
+
+uint8_t uart1_rx_data = 0;
+
+uint8_t tim7_1ms_flag = 0;
+uint8_t tim7_20ms_flag = 0;
+uint8_t tim7_100ms_flag = 0;
+uint8_t tim7_1000ms_flag = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -55,7 +77,8 @@
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
-extern UART_HandleTypeDef huart6;
+extern DMA_HandleTypeDef hdma_adc1;
+extern UART_HandleTypeDef huart1;
 /* USER CODE BEGIN EV */
 
 /* USER CODE END EV */
@@ -199,14 +222,208 @@ void SysTick_Handler(void)
 /******************************************************************************/
 
 /**
+  * @brief This function handles USART1 global interrupt.
+  */
+void USART1_IRQHandler(void)
+{
+  /* USER CODE BEGIN USART1_IRQn 0 */
+
+  /* USER CODE END USART1_IRQn 0 */
+  HAL_UART_IRQHandler(&huart1);
+  /* USER CODE BEGIN USART1_IRQn 1 */
+
+  /* USER CODE END USART1_IRQn 1 */
+}
+
+/**
+  * @brief This function handles UART4 global interrupt.
+  */
+void UART4_IRQHandler(void)
+{
+  /* USER CODE BEGIN UART4_IRQn 0 */
+	static unsigned char cnt = 0;
+
+	if(LL_USART_IsActiveFlag_RXNE(UART4));				// 만일 데이터 전송 받았으면,
+	{
+		// UART4(GPS)에서 데이터 받으면, UART6(PC)로 전송한다.
+		LL_USART_ClearFlag_RXNE(UART4);					// 수신 완료 interrupt의 flag를 clear 해주기. (LL 드라이버 특)
+		uart4_rx_data = LL_USART_ReceiveData8(UART4);	// 받아진 데이터 저장.
+		uart4_rx_flag = 1;								// 데이터 받았다는 flag 의미.
+
+//		LL_USART_TransmitData8(USART6, uart4_rx_data);
+
+		// 들어오는 data를 buffer에 저장한다.
+		// UBX 메시지 프로토콜을 수신하는 코드
+		switch(cnt)
+		{
+		case 0:
+			if (uart4_rx_data == 0xb5){
+				m8n_rx_buf[cnt] = uart4_rx_data;
+				cnt++;
+			}
+			break;
+		case 1:
+			if (uart4_rx_data == 0x62){
+				m8n_rx_buf[cnt] = uart4_rx_data;
+				cnt++;
+			}
+			else
+				cnt = 0;
+			break;
+		case 35:
+			m8n_rx_buf[cnt] = uart4_rx_data;
+			cnt = 0;
+			m8n_rx_cplt_flag = 1;
+			break;
+		default:
+			m8n_rx_buf[cnt] = uart4_rx_data;
+			cnt++;
+			break;
+
+		}
+	}
+
+  /* USER CODE END UART4_IRQn 0 */
+  /* USER CODE BEGIN UART4_IRQn 1 */
+
+  /* USER CODE END UART4_IRQn 1 */
+}
+
+/**
+  * @brief This function handles UART5 global interrupt.
+  */
+void UART5_IRQHandler(void)
+{
+  /* USER CODE BEGIN UART5_IRQn 0 */
+	static unsigned char cnt = 0;						// 정적 지역변수, static은 변수 선언과 동시에 반드시 초기화 해야한다.
+	if(LL_USART_IsActiveFlag_RXNE(UART5));				// 5번 RXNE면 == 5번에 들어온 data 있으면
+	{
+		LL_USART_ClearFlag_RXNE(UART5);					// 수신 완료 interrupt의 flag를 clear 해주기. (LL 드라이버 특)
+		uart5_rx_data = LL_USART_ReceiveData8(UART5);	// 받아진 데이터 저장.
+		uart5_rx_flag = 1;
+
+		switch(cnt){
+		case 0:
+			if(uart5_rx_data == 0x20){
+				ibus_rx_buf[cnt] = uart5_rx_data;
+				cnt++;
+			}
+			break;
+		case 1:
+			if(uart5_rx_data == 0x40){
+				ibus_rx_buf[cnt] = uart5_rx_data;
+				cnt++;
+			}
+			else
+				cnt = 0;			// cnt 0으로 초기화하고 다음 메시지 받을 준비.
+			break;
+		case 31:
+			ibus_rx_buf[cnt] = uart5_rx_data;
+			cnt = 0;
+			ibus_rx_cplt_flag = 1;	// data parsing 완료!
+			break;
+		default:
+			ibus_rx_buf[cnt] = uart5_rx_data;
+			cnt++;
+			break;
+		}
+
+//		while(!LL_USART_IsActiveFlag_TXE(USART6));
+//		LL_USART_TransmitData8(USART6,  uart5_rx_data);	// UART6으로 uart5_data 전송하겠다.
+
+
+	}
+	// UART6(PC)에서 데이터 들어오면, 그 데이터를 UART4(GPS모듈)로 전송한다.
+
+  /* USER CODE END UART5_IRQn 0 */
+  /* USER CODE BEGIN UART5_IRQn 1 */
+
+  /* USER CODE END UART5_IRQn 1 */
+}
+
+/**
+  * @brief This function handles TIM7 global interrupt.
+  */
+void TIM7_IRQHandler(void)
+{
+  /* USER CODE BEGIN TIM7_IRQn 0 */
+	/* 8-5. 20ms 마다 0x10 Telemetry 송신! */
+	static unsigned char tim7_1ms_count = 0;
+	static unsigned char tim7_20ms_count = 0;
+	static unsigned char tim7_100ms_count = 0;
+	static unsigned short tim7_1000ms_count = 0;
+	if (LL_TIM_IsActiveFlag_UPDATE(TIM7))
+	{
+		LL_TIM_ClearFlag_UPDATE(TIM7);
+
+		tim7_1ms_count++;
+		if(tim7_1ms_count==20)
+		{
+			tim7_1ms_count = 0;
+			tim7_1ms_flag = 1;
+		}
+
+		tim7_20ms_count++;
+		if(tim7_20ms_count==20)
+		{
+			tim7_20ms_count = 0;
+			tim7_20ms_flag = 1;
+		}
+
+		tim7_100ms_count++;
+		if(tim7_100ms_count==100)
+		{
+			tim7_100ms_count = 0;
+			tim7_100ms_flag = 1;
+		}
+
+		tim7_1000ms_count++;
+		if(tim7_1000ms_count==1000)
+		{
+			tim7_1000ms_count = 0;
+			tim7_1000ms_flag = 1;
+		}
+	}
+  /* USER CODE END TIM7_IRQn 0 */
+  /* USER CODE BEGIN TIM7_IRQn 1 */
+
+  /* USER CODE END TIM7_IRQn 1 */
+}
+
+/**
+  * @brief This function handles DMA2 stream0 global interrupt.
+  */
+void DMA2_Stream0_IRQHandler(void)
+{
+  /* USER CODE BEGIN DMA2_Stream0_IRQn 0 */
+
+  /* USER CODE END DMA2_Stream0_IRQn 0 */
+  HAL_DMA_IRQHandler(&hdma_adc1);
+  /* USER CODE BEGIN DMA2_Stream0_IRQn 1 */
+
+  /* USER CODE END DMA2_Stream0_IRQn 1 */
+}
+
+/**
   * @brief This function handles USART6 global interrupt.
   */
 void USART6_IRQHandler(void)
 {
   /* USER CODE BEGIN USART6_IRQn 0 */
+	// PC -> GPS ublox 명령어 전송 위한 코드였다.
+
+	if(LL_USART_IsActiveFlag_RXNE(USART6));				// 만일 PC에서 데이터 전송 받았으면,
+	{
+		LL_USART_ClearFlag_RXNE(USART6);				// 수신 완료 interrupt의 flag를 clear 해주기. (LL 드라이버 특)
+		uart6_rx_data = LL_USART_ReceiveData8(USART6);	// 받아진 데이터 저장.
+		uart6_rx_flag = 1;								// 데이터 받았다는 flag 의미.
+
+//		while(!LL_USART_IsActiveFlag_TXE(USART4));
+//		LL_USART_TransmitData8(UART4,  uart6_rx_data);
+	}
+	// UART6(PC)에서 데이터 들어오면, 그 데이터를 UART4(GPS모듈)로 전송한다.
 
   /* USER CODE END USART6_IRQn 0 */
-  HAL_UART_IRQHandler(&huart6);
   /* USER CODE BEGIN USART6_IRQn 1 */
 
   /* USER CODE END USART6_IRQn 1 */

@@ -1,8 +1,46 @@
 /*
- * BNO080.c
+  This is a library written for the BNO080
+  SparkFun sells these at its website: www.sparkfun.com
+  Do you like this library? Help support SparkFun. Buy a board!
+  https://www.sparkfun.com/products/14686
+
+  Written by Nathan Seidle @ SparkFun Electronics, December 28th, 2017
+
+  The BNO080 IMU is a powerful triple axis gyro/accel/magnetometer coupled with an ARM processor
+  to maintain and complete all the complex calculations for various VR, inertial, step counting,
+  and movement operations.
+
+  This library handles the initialization of the BNO080 and is able to query the sensor
+  for different readings.
+
+  https://github.com/sparkfun/SparkFun_BNO080_Arduino_Library
+
+  Development environment specifics:
+  Arduino IDE 1.8.5
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+/*
+ * This library source code has been modified for STM32F4. Only supports SPI.
  *
- *  Created on: Sep 21, 2025
- *      Author: jh
+ * Development environment specifics:
+ * STM32CubeIDE 1.0.0
+ * STM32CubeF4 FW V1.24.1
+ * STM32F4 LL Driver(SPI) and HAL Driver(RCC for HAL_Delay() function)
+ *
+ * Modified by ChrisP(Wonyeob Park) @ M-HIVE Embedded Academy, June, 2019
+ * Rev. 1.0
+ *
+ * https://github.com/ChrisWonyeobPark/BNO080-STM32F4-SPI-LL-Driver
+ * https://www.udemy.com/course/stm32-drone-programming/?referralCode=E24CB7B1CD9993855D45
+ * https://www.inflearn.com/course/stm32cubelde-stm32f4%EB%93%9C%EB%A1%A0-%EA%B0%9C%EB%B0%9C
  */
 
 #include "BNO080.h"
@@ -38,41 +76,126 @@ int16_t gyro_Q1 = 9;
 int16_t magnetometer_Q1 = 4;
 
 
+void BNO080_GPIO_SPI_Initialization(void)
+{
+	LL_SPI_InitTypeDef SPI_InitStruct = {0};
+	
+	LL_GPIO_InitTypeDef GPIO_InitStruct = {0};
+	/* Peripheral clock enable */
+	LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_SPI2);
+	
+	LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_GPIOB);
+	LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_GPIOC);
+	LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_GPIOA);
+	/**SPI2 GPIO Configuration
+	PB13   ------> SPI2_SCK
+	PB14   ------> SPI2_MISO
+	PB15   ------> SPI2_MOSI
+	*/
+	GPIO_InitStruct.Pin = LL_GPIO_PIN_13|LL_GPIO_PIN_14|LL_GPIO_PIN_15;
+	GPIO_InitStruct.Mode = LL_GPIO_MODE_ALTERNATE;
+	GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_VERY_HIGH;
+	GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
+	GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
+	GPIO_InitStruct.Alternate = LL_GPIO_AF_5;
+	LL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+	
+	SPI_InitStruct.TransferDirection = LL_SPI_FULL_DUPLEX;
+	SPI_InitStruct.Mode = LL_SPI_MODE_MASTER;
+	SPI_InitStruct.DataWidth = LL_SPI_DATAWIDTH_8BIT;
+	SPI_InitStruct.ClockPolarity = LL_SPI_POLARITY_HIGH;
+	SPI_InitStruct.ClockPhase = LL_SPI_PHASE_2EDGE;
+	SPI_InitStruct.NSS = LL_SPI_NSS_SOFT;
+	SPI_InitStruct.BaudRate = LL_SPI_BAUDRATEPRESCALER_DIV16;
+	SPI_InitStruct.BitOrder = LL_SPI_MSB_FIRST;
+	SPI_InitStruct.CRCCalculation = LL_SPI_CRCCALCULATION_DISABLE;
+	SPI_InitStruct.CRCPoly = 10;
+	LL_SPI_Init(BNO080_SPI_CHANNEL, &SPI_InitStruct);
+	LL_SPI_SetStandard(BNO080_SPI_CHANNEL, LL_SPI_PROTOCOL_MOTOROLA);
+	
+	/**BNO080 GPIO Control Configuration
+	 * PB12 ------> BNO080_CS (output)
+	 * PA8  ------> BNO080_PS0/WAKE (output)
+	 * PC9  ------> BNO080_RST (output)
+	 * PC8  ------> BNO080_INT (input)
+	 */
+	/**/
+	LL_GPIO_ResetOutputPin(BNO080_RST_PORT, BNO080_RST_PIN);
+	LL_GPIO_ResetOutputPin(BNO080_SPI_CS_PORT, BNO080_SPI_CS_PIN);
+	LL_GPIO_ResetOutputPin(BNO080_PS0_WAKE_PORT, BNO080_PS0_WAKE_PIN);
+	
+	/**/
+	GPIO_InitStruct.Pin = BNO080_SPI_CS_PIN;
+	GPIO_InitStruct.Mode = LL_GPIO_MODE_OUTPUT;
+	GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_VERY_HIGH;
+	GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
+	GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
+	LL_GPIO_Init(BNO080_SPI_CS_PORT, &GPIO_InitStruct);
+	
+	/**/
+	GPIO_InitStruct.Pin = BNO080_RST_PIN;
+	GPIO_InitStruct.Mode = LL_GPIO_MODE_OUTPUT;
+	GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_VERY_HIGH;
+	GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
+	GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
+	LL_GPIO_Init(BNO080_RST_PORT, &GPIO_InitStruct);
+	
+	/**/
+	GPIO_InitStruct.Pin = BNO080_PS0_WAKE_PIN;
+	GPIO_InitStruct.Mode = LL_GPIO_MODE_OUTPUT;
+	GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_VERY_HIGH;
+	GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
+	GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
+	LL_GPIO_Init(BNO080_PS0_WAKE_PORT, &GPIO_InitStruct);
+	
+	/**/
+	GPIO_InitStruct.Pin = BNO080_INT_PIN;
+	GPIO_InitStruct.Mode = LL_GPIO_MODE_INPUT;
+	GPIO_InitStruct.Pull = LL_GPIO_PULL_UP;
+	LL_GPIO_Init(BNO080_INT_PORT, &GPIO_InitStruct);
+
+	LL_SPI_Enable(BNO080_SPI_CHANNEL);
+
+	CHIP_DESELECT(BNO080);
+	WAKE_HIGH();
+	RESET_HIGH();
+}
+
 int BNO080_Initialization(void)
 {
-	/* BNO080 DESELECT --> WAKE UP --> RESET */
-	HAL_GPIO_WritePin(SPI2_CS_GPIO_Port, SPI2_CS_Pin, GPIO_PIN_SET);			// CHIP_DESELECT(BNO080)
-	HAL_GPIO_WritePin(BNO_PS0_WAKE_GPIO_Port, BNO_PS0_WAKE_Pin, GPIO_PIN_SET);	// WAKE_HIGH()
-	HAL_GPIO_WritePin(BNO_RST_GPIO_Port, BNO_RST_Pin, GPIO_PIN_SET);			// RESET_HIGH()
-	printf("Configure BNO080 ...");
-	HAL_GPIO_WritePin(SPI2_CS_GPIO_Port, SPI2_CS_Pin, GPIO_PIN_SET);			// CHIP_DESELECT(BNO080)
-
+	BNO080_GPIO_SPI_Initialization();
+	
+	printf("Checking BNO080...");
+	
+	CHIP_DESELECT(BNO080);
+	
 	//Configure the BNO080 for SPI communication
-	HAL_GPIO_WritePin(BNO_PS0_WAKE_GPIO_Port, BNO_PS0_WAKE_Pin, GPIO_PIN_SET);	//Before boot up the PS0/WAK pin must be high to enter SPI mode
-	HAL_GPIO_WritePin(BNO_RST_GPIO_Port, BNO_RST_Pin, GPIO_PIN_RESET);	//Reset BNO080
+	WAKE_HIGH();	//Before boot up the PS0/WAK pin must be high to enter SPI mode
+	RESET_LOW();	//Reset BNO080
 	HAL_Delay(200);	//Min length not specified in datasheet?
-	HAL_GPIO_WritePin(BNO_RST_GPIO_Port, BNO_RST_Pin, GPIO_PIN_SET);	//Bring out of reset
+	RESET_HIGH();	//Bring out of reset
+	
 	BNO080_waitForSPI(); //Wait until INT pin goes low.
-
+	
 	//At system startup, the hub must send its full advertisement message (see 5.2 and 5.3) to the
 	//host. It must not send any other data until this step is complete.
 	//When BNO080 first boots it broadcasts big startup packet
 	//Read it and dump it
 	BNO080_waitForSPI(); //Wait for assertion of INT before reading advert message.
 	BNO080_receivePacket();
-
+	
 	//The BNO080 will then transmit an unsolicited Initialize Response (see 6.4.5.2)
 	//Read it and dump it
 	BNO080_waitForSPI();  //Wait for assertion of INT before reading Init response
 	BNO080_receivePacket();
-
+	
 	//Check communication with device
-	shtpData[0] = SHTP_REPORT_PRODUCT_ID_REQUEST; 	//Request the product ID and reset info
-	shtpData[1] = 0;						 		//Reserved
-
+	shtpData[0] = SHTP_REPORT_PRODUCT_ID_REQUEST; //Request the product ID and reset info
+	shtpData[1] = 0;						 //Reserved
+	
 	//Transmit packet on channel 2, 2 bytes
 	BNO080_sendPacket(CHANNEL_CONTROL, 2);
-
+	
 	//Now we wait for response
 	BNO080_waitForSPI();
 	if (BNO080_receivePacket() == 1)
@@ -84,27 +207,24 @@ int BNO080_Initialization(void)
 			return (0);
 		}// Sensor OK
 	}
-
+	
 	printf("BNO080 Not OK: 0x%02x Should be 0x%02x\n", shtpData[0], SHTP_REPORT_PRODUCT_ID_RESPONSE);
 	return (1); //Something went wrong
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 unsigned char SPI2_SendByte(unsigned char data)
 {
-//	while(LL_SPI_IsActiveFlag_TXE(BNO080_SPI_CHANNEL)==RESET);		// Tx Buffer에서 shift register로 데이터 로드되면 탈출(이전 데이터 있으면 그거 다 로드될 때 까지 대기)
-//	LL_SPI_TransmitData8(BNO080_SPI_CHANNEL, data);					// data를 TxBuffer에 씀. -> 첫번째 클럭 나오면 Shift Register로 병렬로드 -> MOSI 핀으로 1bit 씩 전송
-//
-//	while(LL_SPI_IsActiveFlag_RXNE(BNO080_SPI_CHANNEL)==RESET);		// RxBuffer에 새 데이터 들어오면 Set으로 탈출 (Receive data Not Empty)
-//	return LL_SPI_ReceiveData8(BNO080_SPI_CHANNEL);					// 데이터 수신 받아서 return
-	uint8_t rx = 0;
-	if (HAL_SPI_TransmitReceive(&hspi2, &data, &rx, 1, 100)){
-		return 0;
-	}
-	return rx;
+	while(LL_SPI_IsActiveFlag_TXE(BNO080_SPI_CHANNEL)==RESET);
+	LL_SPI_TransmitData8(BNO080_SPI_CHANNEL, data);
+	
+	while(LL_SPI_IsActiveFlag_RXNE(BNO080_SPI_CHANNEL)==RESET);
+	return LL_SPI_ReceiveData8(BNO080_SPI_CHANNEL);
 }
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+
+//////////////////////////////////////////////////////////////////////////
+//init
+//////////////////////////////////////////////////////////////////////////
 
 //Updates the latest variables if possible
 //Returns false if new readings are not available
@@ -113,7 +233,7 @@ int BNO080_dataAvailable(void)
 	//If we have an interrupt pin connection available, check if data is available.
 	//If int pin is NULL, then we'll rely on BNO080_receivePacket() to timeout
 	//See issue 13: https://github.com/sparkfun/SparkFun_BNO080_Arduino_Library/issues/13
-	if (HAL_GPIO_ReadPin(BNO_INT_GPIO_Port, BNO_INT_Pin) == 1)
+	if (LL_GPIO_IsInputPinSet(BNO080_INT_PORT, BNO080_INT_PIN) == 1)
 		return (0);
 
 	if (BNO080_receivePacket() == 1)
@@ -879,7 +999,7 @@ int BNO080_waitForSPI(void)
 {
 	for (uint32_t counter = 0; counter < 0xffffffff; counter++) //Don't got more than 255
 	{
-		if (HAL_GPIO_ReadPin(BNO_INT_GPIO_Port, BNO_INT_Pin) == 0)
+		if (LL_GPIO_IsInputPinSet(BNO080_INT_PORT, BNO080_INT_PIN) == 0)
 		{
 			//printf("\nData available\n");
 			return (1);
@@ -897,14 +1017,14 @@ int BNO080_receivePacket(void)
 {
 	uint8_t incoming;
 
-	if (HAL_GPIO_ReadPin(BNO_INT_GPIO_Port, BNO_INT_Pin) == 1)
+	if (LL_GPIO_IsInputPinSet(BNO080_INT_PORT, BNO080_INT_PIN) == 1)
 		return (0); //Data is not available
 
 	//Old way: if (BNO080_waitForSPI() == 0) return (0); //Something went wrong
 
 	//Get first four bytes to find out how much data we need to read
 
-	HAL_GPIO_WritePin(SPI2_CS_GPIO_Port, SPI2_CS_Pin, GPIO_PIN_RESET);	// CHIP_SELECT(BNO080)
+	CHIP_SELECT(BNO080);
 
 	//Get the first four bytes, aka the packet header
 	uint8_t packetLSB = SPI2_SendByte(0);
@@ -942,7 +1062,7 @@ int BNO080_receivePacket(void)
 	}
 	//printf("\n");
 
-	HAL_GPIO_WritePin(SPI2_CS_GPIO_Port, SPI2_CS_Pin, GPIO_PIN_SET); //Release BNO080
+	CHIP_DESELECT(BNO080); //Release BNO080
 	return (1); //We're done!
 }
 
@@ -960,7 +1080,7 @@ int BNO080_sendPacket(uint8_t channelNumber, uint8_t dataLength)
 
 	//BNO080 has max CLK of 3MHz, MSB first,
 	//The BNO080 uses CPOL = 1 and CPHA = 1. This is mode3
-	HAL_GPIO_WritePin(SPI2_CS_GPIO_Port, SPI2_CS_Pin, GPIO_PIN_RESET);	// CHIP_SELECT(BNO080)
+	CHIP_SELECT(BNO080);
 
 	//Send the 4 byte packet header
 	SPI2_SendByte(packetLength & 0xFF);			//Packet length LSB
@@ -974,8 +1094,11 @@ int BNO080_sendPacket(uint8_t channelNumber, uint8_t dataLength)
 		SPI2_SendByte(shtpData[i]);
 	}
 
-	HAL_GPIO_WritePin(SPI2_CS_GPIO_Port, SPI2_CS_Pin, GPIO_PIN_SET);
+	CHIP_DESELECT(BNO080);
 
 	return (1);
 }
 ///////////////////////////////////////////////////////////////////////////
+
+
+

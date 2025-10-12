@@ -12,7 +12,7 @@ void Quaternion_Update(float* q)
 	float norm;
 
 	norm = invSqrt(q[0]*q[0] + q[1]*q[1] + q[2]*q[2] + q[3]*q[3]);    // normalize quaternion
-
+	
 	q1 = q[0] * norm; //x
 	q2 = q[1] * norm; //y
 	q3 = q[2] * norm; //z
@@ -25,13 +25,13 @@ void Quaternion_Update(float* q)
 	BNO080_Pitch *= _180_DIV_PI;
 	BNO080_Roll  *= _180_DIV_PI;
 	BNO080_Yaw   *= _180_DIV_PI;
-
+	
 	if(BNO080_Yaw>=0)
 		BNO080_Yaw = 360.f - BNO080_Yaw;
-	else
+	else	
 		BNO080_Yaw = -BNO080_Yaw;
-
-
+	
+	
 	if(BNO080_Pitch>=0)
 		BNO080_Pitch = 180.f - BNO080_Pitch;
 	else
